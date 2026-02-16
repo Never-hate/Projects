@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transparent M3U8 Player</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        :root {
+            --glass-bg: rgba(16, 18, 27, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --accent: #00d2ff;
+            --accent-glow: rgba(0, 210, 255, 0.4);
+            --text-main: #ffffff;
+            --text-muted: #a0a0a0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            outline: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1c29 0%, #0f1016 100%);
+            color: var(--text-main);
+        }
+
+        /* Animated Background Elements */
+        .bg-blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            z-index: -1;
+            animation: float 10s infinite ease-in-out;
+        }
+        .blob-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: #4a00e0; }
+        .blob-2 { bottom: -10%; right: -10%; width: 60vw; height: 60vw; background: #8e2de2; animation-delay: -5s; }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(20px, -20px); }
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 20px;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Glassmorphism Panel */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        /* Controls Section */
+        .controls-area {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            flex-shrink: 0;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .input-group label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .main-input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .secondary-inputs-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .secondary-inputs-row .input-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        input[type="text"] {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            width: 100%;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        /* Play Button */
+        button#playBtn {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 0 24px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        button#playBtn:hover {
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        button#playBtn:active {
+            transform: scale(0.96);
+        }
+
+        /* Video Area */
+        .video-wrapper {
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Keeps aspect ratio */
+            border-radius: 12px;
+        }
+
+        .status-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 4px 8px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 4px;
+            font-size: 0.7rem;
+            color: #aaa;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .status-badge.visible {
+            opacity: 1;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+        }
+
+        @media (max-width: 600px) {
+            .main-input-row {
+                flex-direction: column;
+            }
+            button#playBtn {
+                width: 100%;
+                padding: 12px;
+            }
+            .secondary-inputs-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Background Effects -->
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
+
+    <div class="app-container">
+        
+        <!-- Controls Panel -->
+        <div class="glass-panel controls-area">
+            <!-- Top Box: URL -->
+            <div class="input-group">
+                <label for="streamUrl">🔗 Stream URL (M3U8 / MP4)</label>
+                <div class="main-input-row">
+                    <input type="text" id="streamUrl" placeholder="https://example.com/stream.m3u8">
+                    <button id="playBtn">▶ Play</button>
+                </div>
+            </div>
+
+            <!-- Bottom Boxes: Headers -->
+            <div class="secondary-inputs-row">
+                <div class="input-group">
+                    <label for="refererVal">↩️ Referrer Value</label>
+                    <input type="text" id="refererVal" placeholder="https://referrer-site.com">
+                </div>
+                <div class="input-group">
+                    <label for="cookieVal">🍪 Cookie Value</label>
+                    <input type="text" id="cookieVal" placeholder="key=value; other=123">
+                </div>
+            </div>
+        </div>
+
+        <!-- Video Player Panel -->
+        <div class="glass-panel video-wrapper">
+            <video id="videoPlayer" controls playsinline></video>
+            <div id="statusBadge" class="status-badge">Ready</div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const video = document.getElementById('videoPlayer');
+            const playBtn = document.getElementById('playBtn');
+            const urlInput = document.getElementById('streamUrl');
+            const refererInput = document.getElementById('refererVal');
+            const cookieInput = document.getElementById('cookieVal');
+            const statusBadge = document.getElementById('statusBadge');
+            
+            let hls = null;
+
+            const updateStatus = (msg) => {
+                statusBadge.textContent = msg;
+                statusBadge.classList.add('visible');
+                setTimeout(() => statusBadge.classList.remove('visible'), 3000);
+            };
+
+            const loadStream = () => {
+                const url = urlInput.value.trim();
+                const referer = refererInput.value.trim();
+                const cookie = cookieInput.value.trim();
+
+                if (!url) {
+                    alert("Please enter a URL");
+                    return;
+                }
+
+                // Clean up previous HLS instance
+                if (hls) {
+                    hls.destroy();
+                    hls = null;
+                }
+
+                // Check for HLS support via HLS.js
+                if (Hls.isSupported() && (url.includes('.m3u8') || !url.includes('.'))) {
+                    updateStatus("Loading HLS...");
+                    
+                    const config = {
+                        xhrSetup: function (xhr, url) {
+                            // ATTEMPTING to set headers. 
+                            // Note: Modern browsers (CORS) block unsafe headers like 'Referer' and 'Cookie' 
+                            // set from client-side JS for security reasons, but this logic follows the prompt.
+                            if (referer) {
+                                try { xhr.setRequestHeader('Referer', referer); } catch(e) { console.warn("Cannot set Referer", e); }
+                                try { xhr.setRequestHeader('X-Referer', referer); } catch(e) {} // Alt header
+                            }
+                            if (cookie) {
+                                // Cookies are typically handled by `withCredentials` or document.cookie, 
+                                // manually setting 'Cookie' header is usually forbidden by XMLHttpRequest spec.
+                                try { xhr.setRequestHeader('Cookie', cookie); } catch(e) { console.warn("Cannot set Cookie header", e); }
+                            }
+                        }
+                    };
+
+                    hls = new Hls(config);
+                    hls.loadSource(url);
+                    hls.attachMedia(video);
+                    
+                    hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                        updateStatus("Playing HLS");
+                        video.play().catch(e => console.log("Auto-play prevented"));
+                    });
+
+                    hls.on(Hls.Events.ERROR, function (event, data) {
+                        if (data.fatal) {
+                            switch (data.type) {
+                                case Hls.ErrorTypes.NETWORK_ERROR:
+                                    console.log('fatal network error encountered, try to recover');
+                                    hls.startLoad();
+                                    break;
+                                case Hls.ErrorTypes.MEDIA_ERROR:
+                                    console.log('fatal media error encountered, try to recover');
+                                    hls.recoverMediaError();
+                                    break;
+                                default:
+                                    console.log('cannot recover');
+                                    hls.destroy();
+                                    break;
+                            }
+                        }
+                    });
+
+                } 
+                // Native HLS (Safari) or standard HTML5 video (mp4/webm)
+                else if (video.canPlayType('application/vnd.apple.mpegurl') || url.includes('.mp4') || url.includes('.webm')) {
+                    updateStatus("Native Video Mode");
+                    video.src = url;
+                    video.addEventListener('loadedmetadata', function() {
+                        video.play().catch(e => console.log("Auto-play prevented"));
+                    });
+                } else {
+                    // Fallback try
+                    updateStatus("Trying Standard Load...");
+                    video.src = url;
+                    video.play();
+                }
+            };
+
+            playBtn.addEventListener('click', loadStream);
+            
+            // Allow Enter key to play
+            urlInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') loadStream();
+            });
+        });
+    </script>
+</body>
+</html>
