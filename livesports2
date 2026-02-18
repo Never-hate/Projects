@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LIVE SPORTS - Stream</title>
+    
+    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+    
+    <style>
+        body {
+            background-color: #000; /* Full Black Background */
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 800px;
+            text-align: center;
+        }
+
+        h2 {
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+            color: #ff0000; /* Red color for 'LIVE' feel */
+            text-transform: uppercase;
+        }
+
+        /* Customizing the Player to be Black */
+        .video-js {
+            width: 100%;
+            border: 2px solid #333;
+            box-shadow: 0px 0px 20px rgba(255, 255, 255, 0.1);
+        }
+
+        .vjs-big-play-button {
+            background-color: rgba(255, 0, 0, 0.5) !important;
+            border-radius: 50% !important;
+            width: 2em !important;
+            height: 2em !important;
+            line-height: 2em !important;
+            margin-top: -1em !important;
+            margin-left: -1em !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>LIVE SPORTS</h2>
+        
+        <video
+            id="my-video"
+            class="video-js vjs-big-play-centered vjs-theme-city"
+            controls
+            preload="auto"
+            autoplay
+            muted
+            data-setup='{}'>
+            <source src="https://iptv.prisma.net.bd/hls/stream2/playlist.m3u8" type="application/x-mpegURL">
+            <p class="vjs-no-js">
+                To view this video please enable JavaScript, and consider upgrading to a
+                web browser that supports HTML5 video.
+            </p>
+        </video>
+    </div>
+
+    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+
+    <script>
+        // Auto-play policy handle করার জন্য
+        var player = videojs('my-video');
+        player.ready(function() {
+            player.play();
+        });
+    </script>
+</body>
+</html>
