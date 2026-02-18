@@ -3,83 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIVE SPORTS - Stream</title>
+    <title>LIVE SPORTS - Autoplay</title>
     
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
     
     <style>
-        body {
-            background-color: #000; /* Full Black Background */
+        body { background-color: #000; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .player-container { width: 95%; max-width: 800px; text-align: center; position: relative; }
+        h2 { color: #ff0000; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+        
+        /* Player Styling */
+        .video-js { width: 100%; border: 1px solid #333; border-radius: 5px; }
+        
+        /* Floating Unmute Button */
+        #unmute-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 0, 0, 0.8);
             color: white;
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-        }
-
-        .container {
-            width: 90%;
-            max-width: 800px;
-            text-align: center;
-        }
-
-        h2 {
-            margin-bottom: 15px;
-            letter-spacing: 2px;
-            color: #ff0000; /* Red color for 'LIVE' feel */
-            text-transform: uppercase;
-        }
-
-        /* Customizing the Player to be Black */
-        .video-js {
-            width: 100%;
-            border: 2px solid #333;
-            box-shadow: 0px 0px 20px rgba(255, 255, 255, 0.1);
-        }
-
-        .vjs-big-play-button {
-            background-color: rgba(255, 0, 0, 0.5) !important;
-            border-radius: 50% !important;
-            width: 2em !important;
-            height: 2em !important;
-            line-height: 2em !important;
-            margin-top: -1em !important;
-            margin-left: -1em !important;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 50px;
+            font-weight: bold;
+            z-index: 10;
+            display: none; /* Default hidden */
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
+    <div class="player-container">
         <h2>LIVE SPORTS</h2>
         
+        <div id="unmute-overlay" onclick="unmutePlayer()">TAP TO UNMUTE</div>
+
         <video
-            id="my-video"
-            class="video-js vjs-big-play-centered vjs-theme-city"
+            id="live-player"
+            class="video-js vjs-big-play-centered"
             controls
             preload="auto"
             autoplay
-            muted
+            muted 
+            playsinline
             data-setup='{}'>
-            <source src="https://iptv.prisma.net.bd/hls/stream2/playlist.m3u8" type="application/x-mpegURL">
-            <p class="vjs-no-js">
-                To view this video please enable JavaScript, and consider upgrading to a
-                web browser that supports HTML5 video.
-            </p>
+            <source src="http://172.16.15.5:8666/T-SPORTS/index.m3u8" type="application/x-mpegURL">
         </video>
     </div>
 
     <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
 
     <script>
-        // Auto-play policy handle করার জন্য
-        var player = videojs('my-video');
+        var player = videojs('live-player');
+
         player.ready(function() {
-            player.play();
+            // Force Autoplay
+            var playPromise = player.play();
+
+            if (playPromise !== undefined) {
+                playPromise.then(_ => {
+                    // Autoplay started! Now check if it's muted.
+                    if (player.muted()) {
+                        document.getElementById('unmute-overlay').style.display = 'block';
+                    }
+                }).catch(error => {
+                    console.log("Autoplay failed, user must click play.");
+                });
+            }
         });
+
+        function unmutePlayer() {
+            player.muted(false);
+            player.volume(1.0);
+            document.getElementById('unmute-overlay').style.display = 'none';
+        }
+
+        // Screen e kothao click korle unmute hobe
+        document.body.addEventListener('click', function() {
+            unmutePlayer();
+        }, { once: true });
     </script>
 </body>
 </html>
