@@ -3,86 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIVE SPORTS - Autoplay</title>
+    <title>LIVE SPORTS - PREMIUM PLAYER</title>
     
-    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
     
     <style>
-        body { background-color: #000; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .player-container { width: 95%; max-width: 800px; text-align: center; position: relative; }
-        h2 { color: #ff0000; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-        
-        /* Player Styling */
-        .video-js { width: 100%; border: 1px solid #333; border-radius: 5px; }
-        
-        /* Floating Unmute Button */
-        #unmute-overlay {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+        body {
+            background-color: #000;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            padding: 10px;
+        }
+
+        h2 {
+            color: #ff0000;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 15px rgba(255, 0, 0, 0.4);
+        }
+
+        /* Customizing Player Colors */
+        .plyr--full-ui.plyr--video .plyr__control--overlaid {
             background: rgba(255, 0, 0, 0.8);
-            color: white;
-            padding: 10px 20px;
-            cursor: pointer;
-            border-radius: 50px;
-            font-weight: bold;
-            z-index: 10;
-            display: none; /* Default hidden */
+        }
+        .plyr--video .plyr__control.plyr__tab-focus, 
+        .plyr--video .plyr__control:hover, 
+        .plyr--video .plyr__control[aria-expanded=true] {
+            background: #ff0000;
+        }
+        .plyr__control--overlaid {
+            padding: 25px;
         }
     </style>
 </head>
 <body>
 
-    <div class="player-container">
+    <div class="container">
         <h2>LIVE SPORTS</h2>
         
-        <div id="unmute-overlay" onclick="unmutePlayer()">TAP TO UNMUTE</div>
-
-        <video
-            id="live-player"
-            class="video-js vjs-big-play-centered"
-            controls
-            preload="auto"
-            autoplay
-            muted 
-            playsinline
-            data-setup='{}'>
+        <video id="player" playsinline controls data-poster="https://bit.ly/3mS6qQp">
             <source src="http://172.16.15.5:8666/T-SPORTS/index.m3u8" type="application/x-mpegURL">
         </video>
     </div>
 
-    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
 
     <script>
-        var player = videojs('live-player');
+        document.addEventListener('DOMContentLoaded', () => {
+            const video = document.querySelector('#player');
+            const source = video.getElementsByTagName('source')[0].src;
+            
+            // Plyr Options
+            const defaultOptions = {
+                autoplay: true,
+                muted: true, // Auto-play guaranteed
+                fullscreen: { enabled: true, fallback: true, iosNative: true },
+                controls: [
+                    'play-large', 'play', 'progress', 'current-time', 
+                    'mute', 'volume', 'captions', 'settings', 'pip', 'fullscreen'
+                ],
+                settings: ['quality', 'speed', 'loop']
+            };
 
-        player.ready(function() {
-            // Force Autoplay
-            var playPromise = player.play();
-
-            if (playPromise !== undefined) {
-                playPromise.then(_ => {
-                    // Autoplay started! Now check if it's muted.
-                    if (player.muted()) {
-                        document.getElementById('unmute-overlay').style.display = 'block';
-                    }
-                }).catch(error => {
-                    console.log("Autoplay failed, user must click play.");
-                });
+            if (Hls.isSupported()) {
+                const hls = new Hls();
+                hls.loadSource(source);
+                hls.attachMedia(video);
+                window.hls = hls;
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = source;
             }
+
+            const player = new Plyr(video, defaultOptions);
+
+            // 100% Unmute with First Click
+            document.body.addEventListener('click', () => {
+                player.muted = false;
+                player.volume = 1;
+                player.play();
+            }, { once: true });
         });
-
-        function unmutePlayer() {
-            player.muted(false);
-            player.volume(1.0);
-            document.getElementById('unmute-overlay').style.display = 'none';
-        }
-
-        // Screen e kothao click korle unmute hobe
-        document.body.addEventListener('click', function() {
-            unmutePlayer();
-        }, { once: true });
     </script>
 </body>
 </html>
