@@ -1,128 +1,42 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIVE SPORTS - Full Feature Player</title>
-    
-    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
-    
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LIVE SPORTS - Mobile Fixed</title>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@clappr/player@latest/dist/clappr.min.js"></script>
     <style>
-        body {
-            background-color: #000;
-            color: #ffffff;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            overflow: hidden;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 900px;
-            text-align: center;
-            position: relative;
-        }
-
-        h2 {
-            margin-bottom: 15px;
-            font-size: 24px;
-            color: #ff0000; 
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            font-weight: bold;
-        }
-
-        /* Black Player Styling */
-        .video-js {
-            width: 100%;
-            aspect-ratio: 16 / 9;
-            border: 1px solid #222;
-            border-radius: 4px;
-            box-shadow: 0px 10px 40px rgba(0, 0, 0, 0.9);
-        }
-
-        /* Unmute Button Overlay */
-        #unmute-btn {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(255, 0, 0, 0.9);
-            color: white;
-            padding: 12px 25px;
-            border-radius: 50px;
-            font-weight: bold;
-            cursor: pointer;
-            z-index: 10;
-            display: none; /* Auto-play hole show korbe */
-            border: 2px solid #fff;
-        }
+        body { background-color: #000; color: #fff; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; }
+        #player { width: 100%; max-width: 800px; aspect-ratio: 16/9; border: 1px solid #333; }
+        h2 { color: red; text-transform: uppercase; margin-bottom: 15px; }
+        .info { margin-top: 10px; font-size: 12px; color: #666; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h2>LIVE SPORTS</h2>
-        
-        <div id="unmute-btn" onclick="activatePlayer()">CLICK TO UNMUTE</div>
-
-        <video
-            id="sports-player"
-            class="video-js vjs-big-play-centered vjs-theme-city"
-            controls
-            preload="auto"
-            autoplay
-            muted
-            playsinline
-            data-setup='{"pictureInPictureToggle": true}'>
-            <source src="https://iptv.prisma.net.bd/hls/stream2/playlist.m3u8" type="application/x-mpegURL">
-        </video>
-    </div>
-
-    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+    <h2>LIVE SPORTS</h2>
+    <div id="player"></div>
+    <p class="info">Make sure you are on Prisma Broadband Wi-Fi</p>
 
     <script>
-        var player = videojs('sports-player');
-
-        // Autoplay enable kora
-        player.ready(function() {
-            var playPromise = player.play();
-
-            if (playPromise !== undefined) {
-                playPromise.then(_ => {
-                    // Autoplay start hoyeche muted obosthay
-                    if (player.muted()) {
-                        document.getElementById('unmute-btn').style.display = 'block';
-                    }
-                }).catch(error => {
-                    // Jodi browser block kore, manually button dekhabe
-                    document.getElementById('unmute-btn').style.display = 'block';
-                });
-            }
+        var player = new Clappr.Player({
+            source: "https://iptv.prisma.net.bd/hls/stream2/playlist.m3u8",
+            parentId: "#player",
+            preload: 'auto',
+            autoPlay: true,
+            mute: true, // Auto-play guaranteed
+            width: '100%',
+            height: '100%',
+            mediacontrol: {seekbar: "#ff0000", buttons: "#ff0000"},
+            actualLiveTime: true,
+            // PIP and Fullscreen included by default in Clappr
         });
 
-        // Unmute ebong Full Sound function
-        function activatePlayer() {
-            player.muted(false);
-            player.volume(1.0);
-            player.play();
-            document.getElementById('unmute-btn').style.display = 'none';
-        }
-
-        // Screen-e click korle auto-unmute trick
+        // Unmute with a single click anywhere
         document.body.addEventListener('click', function() {
-            activatePlayer();
+            player.setVolume(100);
+            player.unmute();
         }, { once: true });
-
-        // PIP (Picture-in-Picture) logic
-        if ('pictureInPictureEnabled' in document) {
-            console.log("PIP is supported and enabled.");
-        }
     </script>
 </body>
 </html>
